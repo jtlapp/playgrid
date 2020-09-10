@@ -8,10 +8,6 @@ export type CanvasConfig = {
 
 export class Canvas {
 
-  //// CLASS STATE
-
-  static readonly canvases: Canvas[] = [];
-
   //// CONFIGURATION
 
   readonly containerID: string;
@@ -35,12 +31,6 @@ export class Canvas {
   table2?: HTMLElement; // ref to <table> DOM node in grid2
   rows1?: HTMLCollection; // ref to array of <tr> DOM nodes in grid1
   rows2?: HTMLCollection; // ref to array of <tr> DOM nodes in grid2
-
-  //// STATIC METHODS
-
-  static initialize() {
-    Canvas.canvases.forEach(canvas => canvas._init());
-  }
 
   //// CONSTRUCTION
 
@@ -74,9 +64,7 @@ export class Canvas {
     this.errorAlerts = config.errorAlerts ?? true;
     this.animate = animate;
 
-    Canvas.canvases.push(this);
-
-    // TBD: try to add an event listener to do initialization after load
+    window.addEventListener("DOMContentLoaded", () => this._init());
   }
 
   //// PUBLIC METHODS
@@ -133,6 +121,8 @@ export class Canvas {
       }, milliseconds);
     });
   }
+
+  //// PRIVATE METHODS
   
   _init() {
     // TBD: I don't think this is right. I was putting the table in a pre-existing grid.
@@ -144,8 +134,6 @@ export class Canvas {
     this.rows2 = this.table2.children[0].children;
     this.grid2.classList.add("hide");
     this._setGridAspectRatio();
-
-    // TBD: I'm not sure this works.
     window.addEventListener("resize", this._setGridAspectRatio.bind(this));
     this.initialized = true;
   }
