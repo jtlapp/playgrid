@@ -3,7 +3,7 @@ export type GridConfig = {
   width: number,
   height: number,
   enforceBoundaries: boolean,
-  errorAlerts: boolean
+  alertOnError: boolean
 };
 
 export class Grid {
@@ -14,13 +14,11 @@ export class Grid {
   readonly width: number;
   readonly height: number;
   readonly enforceBoundaries: boolean;
-  readonly errorAlerts: boolean;
-  readonly animate: () => Promise<void>;
+  readonly alertOnError: boolean;
 
   //// INSTANCE STATE
 
   initialized = false; // whether grid has been initialized
-  running = false; // whether currently running animation
   useGrid1 = true; // whether plotting on frame 1
 
   //// CACHED VALUES
@@ -50,7 +48,7 @@ export class Grid {
     if (["undefined", "boolean"].indexOf(typeof config.enforceBoundaries) == -1) {
       this._error("enforceBoundaries must be a boolean");
     }
-    if (["undefined", "boolean"].indexOf(typeof config.errorAlerts) == -1) {
+    if (["undefined", "boolean"].indexOf(typeof config.alertOnError) == -1) {
       this._error("errorAlerts must be a boolean");
     }
     if (typeof animate != "function") {
@@ -61,8 +59,7 @@ export class Grid {
     this.width = config.width;
     this.height = config.height;
     this.enforceBoundaries = config.enforceBoundaries ?? true;
-    this.errorAlerts = config.errorAlerts ?? true;
-    this.animate = animate;
+    this.alertOnError = config.alertOnError ?? true;
 
     window.addEventListener("DOMContentLoaded", () => this._init());
   }
@@ -104,22 +101,6 @@ export class Grid {
       this.grid1!.classList.remove("hide");
     }
     this.useGrid1 = !this.useGrid1;
-  }
-
-  async delay(milliseconds: number) {
-    this._confirmReady();
-    if (isNaN(milliseconds) || milliseconds < 0) {
-      this._error("milliseconds must be a number >= 0");
-    }
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (!this.running) {
-          console.log("STOPPED ANIMATION");
-          throw Error("STOPPED ANIMATION");
-        }
-        resolve();
-      }, milliseconds);
-    });
   }
 
   //// PRIVATE METHODS
@@ -180,23 +161,6 @@ export class Grid {
     child.style.height = adjustedHeight + "px";
   }
   
-  async _start() {
-    // TBD: Who calls this? From where? And stop too?
-    this.clear();
-    this.swap();
-    this.clear();
-    this.running = true;
-    await this.animate();
-    this.running = false;
-  }
-
-  _stop() {
-    if (!this.running) {
-      this._error("can't stop animation because it isn't running");
-    }
-    this.running = false;
-  }
-  
   _validateColor(color: string) {
     if (color != null && (typeof color != "string" || color.length == 0)) {
       this._error("color must either be null or a CSS class name");
@@ -222,7 +186,7 @@ export class Grid {
   }
 
   _error(message: string): never {
-    if (this.errorAlerts) {
+    if (this.alertOnError) {
       alert("ERROR: " + message);
     }
     throw Error(message);
