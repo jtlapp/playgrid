@@ -1,4 +1,30 @@
 
+const styles = `
+  .pixel_grids {
+    position: relative;
+  }
+
+  table.pixel_grid,
+  table.pixel_grid tr,
+  table.pixel_grid td {
+    border: none;
+    border-spacing: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  table.pixel_grid {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .hide_grid {
+    display: none;
+  }
+`;
+
 export type GridConfig = {
   width: number,
   height: number,
@@ -15,6 +41,10 @@ export class Grid {
   readonly height: number;
   readonly enforceBoundaries: boolean;
   readonly alertOnError: boolean;
+
+  //// CLASS STATE
+
+  static initialized = false;
 
   //// INSTANCE STATE
 
@@ -79,7 +109,6 @@ export class Grid {
   
   plot(x: number, y: number, color: string) {
     // Helpfully guard calls that students make from JavaScript.
-
     this._confirmReady();
     const withinBoundaries = this._validatePoint(x, y);
     this._validateColor(color);
@@ -92,13 +121,12 @@ export class Grid {
     
   swap() {
     this._confirmReady();
-    const elem = document.getElementById("foo");
     if (this.useGrid1) {
-      this.grid1!.classList.add("hide");
-      this.grid2!.classList.remove("hide");
+      this.grid1!.classList.add("hide_grid");
+      this.grid2!.classList.remove("hide_grid");
     } else {
-      this.grid2!.classList.add("hide");
-      this.grid1!.classList.remove("hide");
+      this.grid2!.classList.add("hide_grid");
+      this.grid1!.classList.remove("hide_grid");
     }
     this.useGrid1 = !this.useGrid1;
   }
@@ -106,6 +134,13 @@ export class Grid {
   //// PRIVATE METHODS
   
   _init() {
+    if (!this.initialized) { // only do this on first grid of page
+      const stylesheet = document.createElement("style");
+      stylesheet.type = "text/css";
+      stylesheet.innerText = styles;
+      document.head.appendChild(stylesheet);
+      this.initialized = true;
+    }
     const container = document.getElementById(this.containerID);
     if (container == null) {
       this._error(`cannot find container element with ID "${this.containerID}"`);
@@ -117,7 +152,7 @@ export class Grid {
     this.grid2 = this._createGridElement();
     this.table2 = this.grid2.firstElementChild as HTMLElement;
     this.rows2 = this.table2.children[0].children;
-    this.grid2.classList.add("hide");
+    this.grid2.classList.add("hide_grid");
     container.append(this.grid2);
     this._setGridAspectRatio();
     window.addEventListener("resize", () => this._setGridAspectRatio());
@@ -125,7 +160,7 @@ export class Grid {
   }
 
   _createGridElement(): HTMLElement {
-    let html = "<table class='grid'>\n";
+    let html = "<div class='pixel_grids'><table class='pixel_grid'>\n";
     for (let r = 0; r < this.height; ++r) {
       html += "<tr>";
       for (let c = 0; c < this.width; ++c) {
@@ -133,7 +168,7 @@ export class Grid {
       }
       html += "</tr>\n";
     }
-    html + "</table>\n";
+    html + "</table></div>\n";
 
     let template = document.createElement('template');
     template.innerHTML = html;
