@@ -129,11 +129,11 @@ export class Canvas {
     if (container == null) {
       this._error(`cannot find container element with ID "${this.containerID}"`);
     }
-    this.grid1 = this._createGridElement("grid1");
+    this.grid1 = this._createGridElement();
     this.table1 = this.grid1.firstElementChild as HTMLElement;
     this.rows1 = this.table1.children[0].children;
     container.append(this.grid1);
-    this.grid2 = this._createGridElement("grid2");
+    this.grid2 = this._createGridElement();
     this.table2 = this.grid2.firstElementChild as HTMLElement;
     this.rows2 = this.table2.children[0].children;
     this.grid2.classList.add("hide");
@@ -143,8 +143,8 @@ export class Canvas {
     this.initialized = true;
   }
 
-  _createGridElement(name: string): HTMLElement {
-    let html = `<div class='${name}' <table class='canvas'>\n`;
+  _createGridElement(): HTMLElement {
+    let html = "<table class='canvas'>\n";
     for (let r = 0; r < this.canvasHeight; ++r) {
       html += "<tr>";
       for (let c = 0; c < this.canvasWidth; ++c) {
@@ -152,7 +152,7 @@ export class Canvas {
       }
       html += "</tr>\n";
     }
-    html + "</table></div>\n";
+    html + "</table>\n";
 
     let template = document.createElement('template');
     template.innerHTML = html;
