@@ -21,7 +21,7 @@ export class Canvas {
 
   initialized = false; // whether canvas has been initialized
   running = false; // whether currently running animation
-  plottingFrame1 = true; // whether plotting on frame 1
+  useGrid1 = true; // whether plotting on frame 1
 
   //// CACHED VALUES
 
@@ -71,7 +71,7 @@ export class Canvas {
 
   clear() {
     this._confirmReady();
-    const rows = this.plottingFrame1 ? this.rows1 : this.rows2;
+    const rows = this.useGrid1 ? this.rows1 : this.rows2;
     for (let r = 0; r < this.canvasHeight; ++r) {
       const targetCells = rows![r].children;
       for (let c = 0; c < this.canvasWidth; ++c) {
@@ -88,7 +88,7 @@ export class Canvas {
     this._validateColor(color);
 
     if (withinBoundaries) {
-      const rows = this.plottingFrame1 ? this.rows1 : this.rows2;
+      const rows = this.useGrid1 ? this.rows1 : this.rows2;
       rows![Math.floor(y)].children[Math.floor(x)].className = color;
     }
   }
@@ -96,14 +96,14 @@ export class Canvas {
   swap() {
     this._confirmReady();
     const elem = document.getElementById("foo");
-    if (this.plottingFrame1) {
+    if (this.useGrid1) {
       this.grid1!.classList.add("hide");
       this.grid2!.classList.remove("hide");
     } else {
       this.grid2!.classList.add("hide");
       this.grid1!.classList.remove("hide");
     }
-    this.plottingFrame1 = !this.plottingFrame1;
+    this.useGrid1 = !this.useGrid1;
   }
 
   async delay(milliseconds: number) {
@@ -125,16 +125,21 @@ export class Canvas {
   //// PRIVATE METHODS
   
   _init() {
-    // TBD: I don't think this is right. I was putting the table in a pre-existing grid.
+    const container = document.getElementById(this.containerID);
+    if (container == null) {
+      this._error(`cannot find container element with ID "${this.containerID}"`);
+    }
     this.grid1 = this._createGridElement("grid1");
     this.table1 = this.grid1.firstElementChild as HTMLElement;
     this.rows1 = this.table1.children[0].children;
+    container.append(this.grid1);
     this.grid2 = this._createGridElement("grid2");
     this.table2 = this.grid2.firstElementChild as HTMLElement;
     this.rows2 = this.table2.children[0].children;
     this.grid2.classList.add("hide");
+    container.append(this.grid2);
     this._setGridAspectRatio();
-    window.addEventListener("resize", this._setGridAspectRatio.bind(this));
+    window.addEventListener("resize", () => this._setGridAspectRatio());
     this.initialized = true;
   }
 
@@ -216,7 +221,7 @@ export class Canvas {
     }
   }
 
-  _error(message: string) {
+  _error(message: string): never {
     if (this.errorAlerts) {
       alert("ERROR: " + message);
     }
