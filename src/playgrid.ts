@@ -1,7 +1,7 @@
 
 export type GridConfig = {
-  gridWidth: number,
-  gridHeight: number,
+  width: number,
+  height: number,
   enforceBoundaries: boolean,
   errorAlerts: boolean
 };
@@ -11,8 +11,8 @@ export class Grid {
   //// CONFIGURATION
 
   readonly containerID: string;
-  readonly gridWidth: number;
-  readonly gridHeight: number;
+  readonly width: number;
+  readonly height: number;
   readonly enforceBoundaries: boolean;
   readonly errorAlerts: boolean;
   readonly animate: () => Promise<void>;
@@ -41,11 +41,11 @@ export class Grid {
     if (typeof containerID != "string" || containerID.length == 0) {
       this._error("containerID must be the value of an HTML 'id' attribute");
     }
-    if (isNaN(config.gridWidth) || isNaN(config.gridHeight)) {
-      this._error("gridWidth and gridHeight must be numbers");
+    if (isNaN(config.width) || isNaN(config.height)) {
+      this._error("width and height must be numbers");
     }
-    if (config.gridWidth < 1 || config.gridHeight < 1) {
-      this._error("gridWidth and gridHeight must be >= 1");
+    if (config.width < 1 || config.height < 1) {
+      this._error("width and height must be >= 1");
     }
     if (["undefined", "boolean"].indexOf(typeof config.enforceBoundaries) == -1) {
       this._error("enforceBoundaries must be a boolean");
@@ -58,8 +58,8 @@ export class Grid {
     }
 
     this.containerID = containerID;
-    this.gridWidth = config.gridWidth;
-    this.gridHeight = config.gridHeight;
+    this.width = config.width;
+    this.height = config.height;
     this.enforceBoundaries = config.enforceBoundaries ?? true;
     this.errorAlerts = config.errorAlerts ?? true;
     this.animate = animate;
@@ -72,9 +72,9 @@ export class Grid {
   clear() {
     this._confirmReady();
     const rows = this.useGrid1 ? this.rows1 : this.rows2;
-    for (let r = 0; r < this.gridHeight; ++r) {
+    for (let r = 0; r < this.height; ++r) {
       const targetCells = rows![r].children;
-      for (let c = 0; c < this.gridWidth; ++c) {
+      for (let c = 0; c < this.width; ++c) {
         targetCells[c].className = "";
       }
     }
@@ -145,9 +145,9 @@ export class Grid {
 
   _createGridElement(): HTMLElement {
     let html = "<table class='grid'>\n";
-    for (let r = 0; r < this.gridHeight; ++r) {
+    for (let r = 0; r < this.height; ++r) {
       html += "<tr>";
-      for (let c = 0; c < this.gridWidth; ++c) {
+      for (let c = 0; c < this.width; ++c) {
         html += "<td></td>";
       }
       html += "</tr>\n";
@@ -169,7 +169,7 @@ export class Grid {
   
   _setAspectRatio(child: HTMLElement, topOffset: number) {
     // CSS solutions were too hard to make behave as expected
-    const aspectRatio = this.gridWidth / this.gridHeight;
+    const aspectRatio = this.width / this.height;
     let adjustedWidth = window.innerWidth;
     let adjustedHeight = adjustedWidth / aspectRatio;
     if (adjustedHeight + topOffset > window.innerHeight) {
@@ -208,7 +208,7 @@ export class Grid {
       this._error("x and y must be numbers");
     }
     const withinBoundaries = 
-        (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight);
+        (x < 0 || x >= this.width || y < 0 || y >= this.height);
     if (this.enforceBoundaries && !withinBoundaries) {
       this._error(`location (${x}, ${y}) is not on the grid`);
     }
