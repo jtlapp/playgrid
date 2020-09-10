@@ -1,25 +1,25 @@
 
-export type CanvasConfig = {
-  canvasWidth: number,
-  canvasHeight: number,
+export type GridConfig = {
+  gridWidth: number,
+  gridHeight: number,
   enforceBoundaries: boolean,
   errorAlerts: boolean
 };
 
-export class Canvas {
+export class Grid {
 
   //// CONFIGURATION
 
   readonly containerID: string;
-  readonly canvasWidth: number;
-  readonly canvasHeight: number;
+  readonly gridWidth: number;
+  readonly gridHeight: number;
   readonly enforceBoundaries: boolean;
   readonly errorAlerts: boolean;
   readonly animate: () => Promise<void>;
 
   //// INSTANCE STATE
 
-  initialized = false; // whether canvas has been initialized
+  initialized = false; // whether grid has been initialized
   running = false; // whether currently running animation
   useGrid1 = true; // whether plotting on frame 1
 
@@ -34,18 +34,18 @@ export class Canvas {
 
   //// CONSTRUCTION
 
-  constructor(containerID: string, config: CanvasConfig, animate: () => Promise<void>) {
+  constructor(containerID: string, config: GridConfig, animate: () => Promise<void>) {
 
     // Helpfully guard calls that students make from JavaScript.
 
     if (typeof containerID != "string" || containerID.length == 0) {
       this._error("containerID must be the value of an HTML 'id' attribute");
     }
-    if (isNaN(config.canvasWidth) || isNaN(config.canvasHeight)) {
-      this._error("canvasWidth and canvasHeight must be numbers");
+    if (isNaN(config.gridWidth) || isNaN(config.gridHeight)) {
+      this._error("gridWidth and gridHeight must be numbers");
     }
-    if (config.canvasWidth < 1 || config.canvasHeight < 1) {
-      this._error("canvasWidth and canvasHeight must be >= 1");
+    if (config.gridWidth < 1 || config.gridHeight < 1) {
+      this._error("gridWidth and gridHeight must be >= 1");
     }
     if (["undefined", "boolean"].indexOf(typeof config.enforceBoundaries) == -1) {
       this._error("enforceBoundaries must be a boolean");
@@ -58,8 +58,8 @@ export class Canvas {
     }
 
     this.containerID = containerID;
-    this.canvasWidth = config.canvasWidth;
-    this.canvasHeight = config.canvasHeight;
+    this.gridWidth = config.gridWidth;
+    this.gridHeight = config.gridHeight;
     this.enforceBoundaries = config.enforceBoundaries ?? true;
     this.errorAlerts = config.errorAlerts ?? true;
     this.animate = animate;
@@ -72,9 +72,9 @@ export class Canvas {
   clear() {
     this._confirmReady();
     const rows = this.useGrid1 ? this.rows1 : this.rows2;
-    for (let r = 0; r < this.canvasHeight; ++r) {
+    for (let r = 0; r < this.gridHeight; ++r) {
       const targetCells = rows![r].children;
-      for (let c = 0; c < this.canvasWidth; ++c) {
+      for (let c = 0; c < this.gridWidth; ++c) {
         targetCells[c].className = "";
       }
     }
@@ -144,10 +144,10 @@ export class Canvas {
   }
 
   _createGridElement(): HTMLElement {
-    let html = "<table class='canvas'>\n";
-    for (let r = 0; r < this.canvasHeight; ++r) {
+    let html = "<table class='grid'>\n";
+    for (let r = 0; r < this.gridHeight; ++r) {
       html += "<tr>";
-      for (let c = 0; c < this.canvasWidth; ++c) {
+      for (let c = 0; c < this.gridWidth; ++c) {
         html += "<td></td>";
       }
       html += "</tr>\n";
@@ -169,7 +169,7 @@ export class Canvas {
   
   _setAspectRatio(child: HTMLElement, topOffset: number) {
     // CSS solutions were too hard to make behave as expected
-    const aspectRatio = this.canvasWidth / this.canvasHeight;
+    const aspectRatio = this.gridWidth / this.gridHeight;
     let adjustedWidth = window.innerWidth;
     let adjustedHeight = adjustedWidth / aspectRatio;
     if (adjustedHeight + topOffset > window.innerHeight) {
@@ -208,7 +208,7 @@ export class Canvas {
       this._error("x and y must be numbers");
     }
     const withinBoundaries = 
-        (x < 0 || x >= this.canvasWidth || y < 0 || y >= this.canvasHeight);
+        (x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight);
     if (this.enforceBoundaries && !withinBoundaries) {
       this._error(`location (${x}, ${y}) is not on the grid`);
     }
@@ -217,7 +217,7 @@ export class Canvas {
 
   _confirmReady() {
     if (!this.initialized) {
-      this._error("canvas has not been initialized");
+      this._error("grid has not been initialized");
     }
   }
 
