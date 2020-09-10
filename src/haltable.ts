@@ -5,9 +5,12 @@ export default class Haltable {
 
   static readonly checkMillis = 200;
 
+  //// CONFIGURATION
+
+  readonly alertOnError: boolean;
+
   //// INSTANCE STATE
 
-  alertOnError: boolean;
   running = false; // whether currently running
 
   //// CONSTRUCTION
