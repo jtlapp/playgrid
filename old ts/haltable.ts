@@ -25,23 +25,23 @@ export default class Haltable {
     if (isNaN(milliseconds) || milliseconds < 0) {
       this._error("milliseconds must be a number >= 0");
     }
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       this._nextInterval(milliseconds, resolve);
     });
   }
 
-  async loop(runnable: () => Promise<boolean>) {
+  async loop(runnable: (resource?: any) => Promise<boolean>, resource?: any) {
     this._validateRunnable(runnable);
     this.running = true;
-    while(await runnable())
+    while(await runnable(resource) == true)
       ;
     this.running = false;
   }
 
-  async run(runnable: () => Promise<void>) {
+  async run(runnable: (resource?: any) => Promise<void>, resource?: any) {
     this._validateRunnable(runnable);
     this.running = true;
-    await runnable();
+    await runnable(resource);
     this.running = false;
   }
 
@@ -66,7 +66,7 @@ export default class Haltable {
     }, intervalMillis);
   }
 
-  _validateRunnable(runnable: () => Promise<any>) {
+  _validateRunnable(runnable: (resource: any) => Promise<any>) {
     if (typeof runnable != "function" ||
         runnable.constructor.name != "AsyncFunction") {
       this._error("the runnable must be an async function");

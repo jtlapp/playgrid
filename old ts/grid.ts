@@ -1,26 +1,26 @@
 
 const styles = `
-  .pixel_grids {
+  .playgrid_wrapper {
     position: relative;
   }
 
-  table.pixel_grid,
-  table.pixel_grid tr,
-  table.pixel_grid td {
+  table.playgrid_grid,
+  table.playgrid_grid tr,
+  table.playgrid_grid td {
     border: none;
     border-spacing: 0;
     padding: 0;
     margin: 0;
   }
 
-  table.pixel_grid {
+  table.playgrid_grid {
     width: 100%;
     position: absolute;
     top: 0;
     left: 0;
   }
 
-  .hide_grid {
+  .playgrid_hide {
     display: none;
   }
 `;
@@ -32,7 +32,7 @@ export type GridConfig = {
   alertOnError: boolean
 };
 
-export class Grid {
+export default class Grid {
 
   //// CONFIGURATION
 
@@ -44,11 +44,12 @@ export class Grid {
 
   //// CLASS STATE
 
-  static initialized = false;
+  static initializedPage = false; // whether page has been initialized
 
   //// INSTANCE STATE
 
-  initialized = false; // whether grid has been initialized
+  // TBD: I don't think I need initializedGrid
+  initializedGrid = false; // whether grid has been initialized
   useGrid1 = true; // whether plotting on frame 1
 
   //// CACHED VALUES
@@ -62,7 +63,7 @@ export class Grid {
 
   //// CONSTRUCTION
 
-  constructor(containerID: string, config: GridConfig, animate: () => Promise<void>) {
+  constructor(containerID: string, config: GridConfig) {
 
     // Helpfully guard calls that students make from JavaScript.
 
@@ -81,9 +82,6 @@ export class Grid {
     if (["undefined", "boolean"].indexOf(typeof config.alertOnError) == -1) {
       this._error("errorAlerts must be a boolean");
     }
-    if (typeof animate != "function") {
-      this._error("the animate parameter must be a function");
-    }
 
     this.containerID = containerID;
     this.width = config.width;
@@ -91,7 +89,10 @@ export class Grid {
     this.enforceBoundaries = config.enforceBoundaries ?? true;
     this.alertOnError = config.alertOnError ?? true;
 
-    window.addEventListener("DOMContentLoaded", () => this._init());
+    window.addEventListener("DOMContentLoaded", () => {
+      this._init();
+      Grid.initializedPage = true; // outside of _init so _init can be overloaded
+    });
   }
 
   //// PUBLIC METHODS
@@ -122,29 +123,34 @@ export class Grid {
   swap() {
     this._confirmReady();
     if (this.useGrid1) {
-      this.grid1!.classList.add("hide_grid");
-      this.grid2!.classList.remove("hide_grid");
+      this.grid1!.classList.add("playgrid_hide");
+      this.grid2!.classList.remove("playgrid_hide");
     } else {
-      this.grid2!.classList.add("hide_grid");
-      this.grid1!.classList.remove("hide_grid");
+      this.grid2!.classList.add("playgrid_hide");
+      this.grid1!.classList.remove("playgrid_hide");
     }
     this.useGrid1 = !this.useGrid1;
   }
 
   //// PRIVATE METHODS
+
+  _addStyles(styles: string) {
+    const stylesheet = document.createElement("style");
+    stylesheet.type = "text/css";
+    stylesheet.innerText = styles;
+    document.head.appendChild(stylesheet);
+  }
   
   _init() {
-    if (!this.initialized) { // only do this on first grid of page
-      const stylesheet = document.createElement("style");
-      stylesheet.type = "text/css";
-      stylesheet.innerText = styles;
-      document.head.appendChild(stylesheet);
-      this.initialized = true;
+    if (!Grid.initializedPage) { // only do this on first grid of page
+      this._addStyles(styles);
     }
+    this.initializedGrid = true;
     const container = document.getElementById(this.containerID);
     if (container == null) {
       this._error(`cannot find container element with ID "${this.containerID}"`);
     }
+    container.classList.add("playgrid_wrapper");
     this.grid1 = this._createGridElement();
     this.table1 = this.grid1.firstElementChild as HTMLElement;
     this.rows1 = this.table1.children[0].children;
@@ -152,15 +158,20 @@ export class Grid {
     this.grid2 = this._createGridElement();
     this.table2 = this.grid2.firstElementChild as HTMLElement;
     this.rows2 = this.table2.children[0].children;
-    this.grid2.classList.add("hide_grid");
+    this.grid2.classList.add("playgrid_hide");
     container.append(this.grid2);
     this._setGridAspectRatio();
     window.addEventListener("resize", () => this._setGridAspectRatio());
-    this.initialized = true;
+  }
+
+  _createElementFromHTML(html: string): HTMLElement {
+    let template = document.createElement('template');
+    template.innerHTML = html;
+    return template.content.firstElementChild as HTMLElement;
   }
 
   _createGridElement(): HTMLElement {
-    let html = "<div class='pixel_grids'><table class='pixel_grid'>\n";
+    let html = "<table class='playgrid_grid'>\n";
     for (let r = 0; r < this.height; ++r) {
       html += "<tr>";
       for (let c = 0; c < this.width; ++c) {
@@ -168,13 +179,10 @@ export class Grid {
       }
       html += "</tr>\n";
     }
-    html + "</table></div>\n";
-
-    let template = document.createElement('template');
-    template.innerHTML = html;
-    return template.content.firstElementChild as HTMLElement;
+    html += "</table>\n";
+    return this._createElementFromHTML(html);
   }
-  
+
   _setGridAspectRatio() {
     this._confirmReady();
     const topOffset = Math.max(this.table1!.getBoundingClientRect().top,
@@ -215,7 +223,7 @@ export class Grid {
   }
 
   _confirmReady() {
-    if (!this.initialized) {
+    if (!this.initializedGrid) {
       this._error("grid has not been initialized");
     }
   }

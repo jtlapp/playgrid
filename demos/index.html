@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PlayGrid Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="../src/grid.js"></script>
+  <script src="../src/haltable.js"></script>
+  <script src="../src/playgrid.js"></script>
+
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    .frame {
+    }
+    #my_grid {
+      width: 100%;
+      padding: 20px;
+    }
+    #my_grid table {
+      background-color: black;
+    }
+    .green {
+      background-color: green;
+    }
+    .blue {
+      background-color: blue;
+    }
+    .red {
+      background-color: red;
+    }
+  </style>
+  <script>
+    async function animation(grid) {
+      grid.plot(1, 1, "red");
+      grid.plot(2, 2, "blue");
+    }
+
+    window.addEventListener("load", game);
+
+    function game() {
+      var grid = new PlayGrid("my_grid", {
+          width: 10,
+          height: 10
+        }, animation);
+    }
+  </script>
+</head>
+<body>
+  <div class="frame">
+    <div id="my_grid"></div>
+  </div>
+</body>
+</html>
