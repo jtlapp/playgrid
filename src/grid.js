@@ -4,7 +4,7 @@ const _gridStyles = `
     position: relative;
   }
 
-  .playgrid_grid {
+  .playgrid_gridframe {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -12,9 +12,9 @@ const _gridStyles = `
     left: 0;
   }
 
-  .playgrid_grid table,
-  .playgrid_grid table tr,
-  .playgrid_grid table td {
+  .playgrid_gridframe table,
+  .playgrid_gridframe table tr,
+  .playgrid_gridframe table td {
     border: none;
     border-spacing: 0;
     padding: 0;
@@ -42,6 +42,7 @@ class Grid {
 
   //// CACHED VALUES
 
+  // container: HTMLElement; // ref to the provided grid container
   // grid1?: HTMLElement; // ref to grid1 for pingponging rendering
   // grid2?: HTMLElement; // ref to grid2 for pingponging rendering
   // table1?: HTMLElement; // ref to <table> DOM node in grid1
@@ -88,20 +89,20 @@ class Grid {
 
     this._addStyles(_gridStyles);
 
-    const container = document.getElementById(this.containerID);
-    if (container == null) {
+    this.container = document.getElementById(this.containerID);
+    if (this.container == null) {
       this._error(`cannot find container element with ID "${this.containerID}"`);
     }
-    container.classList.add("playgrid_wrapper");
+    this.container.classList.add("playgrid_wrapper");
     this.grid1 = this._createGridElement();
     this.table1 = this.grid1.firstElementChild;
     this.rows1 = this.table1.children[0].children;
-    container.append(this.grid1);
+    this.container.append(this.grid1);
     this.grid2 = this._createGridElement();
     this.table2 = this.grid2.firstElementChild;
     this.rows2 = this.table2.children[0].children;
     this.grid2.classList.add("playgrid_hide");
-    container.append(this.grid2);
+    this.container.append(this.grid2);
     this._setGridAspectRatio();
     window.addEventListener("resize", () => this._setGridAspectRatio());
   }
@@ -156,7 +157,9 @@ class Grid {
   }
 
   _createGridElement() {
-    let html = "<div class='playgrid_grid'><table>\n";
+    // Class playgrid_canvas allows app to modify style without
+    // being dependent on the table implmentation.
+    let html = "<div class='playgrid_gridframe'><table class='playgrid_canvas'>\n";
     for (let r = 0; r < this.height; ++r) {
       html += "<tr>";
       for (let c = 0; c < this.width; ++c) {
@@ -169,19 +172,18 @@ class Grid {
   }
 
   _setGridAspectRatio() {
-    const topOffset = Math.max(this.table1.getBoundingClientRect().top,
-        this.table2.getBoundingClientRect().top);
-    this._setAspectRatio(this.table1, topOffset);
-    this._setAspectRatio(this.table2, topOffset);
+    const rect = this.container.getBoundingClientRect();
+    this._setAspectRatio(this.table1, rect);
+    this._setAspectRatio(this.table2, rect);
   }
   
-  _setAspectRatio(child, topOffset) {
+  _setAspectRatio(child, rect) {
     // CSS solutions were too hard to make behave as expected
     const aspectRatio = this.width / this.height;
-    let adjustedWidth = window.innerWidth;
+    let adjustedWidth = rect.right - rect.left;
     let adjustedHeight = adjustedWidth / aspectRatio;
-    if (adjustedHeight + topOffset > window.innerHeight) {
-      adjustedHeight = window.innerHeight - topOffset;
+    if (adjustedHeight > rect.bottom - rect.top) {
+      adjustedHeight = rect.bottom - rect.top;
       adjustedWidth = adjustedHeight * aspectRatio;
     }
     child.style.width = adjustedWidth + "px";
