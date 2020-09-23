@@ -21,12 +21,12 @@ const _playgridGridStyles = `
     margin: auto;
   }
 
-  .playgrid_hide {
-    display: none;
+  .playgrid_wrapper img {
+    position: absolute;
   }
 
-  .playgrid_frame img {
-
+  .playgrid_hide {
+    display: none;
   }
 `;
 
@@ -44,6 +44,7 @@ class Grid {
   //// INSTANCE STATE
 
   useGrid1 = true; // whether plotting on frame 1
+  images = []; // images for repositioning on resize
 
   //// CACHED VALUES
 
@@ -55,6 +56,8 @@ class Grid {
   // rows1?: HTMLCollection; // ref to array of <tr> DOM nodes in grid1
   // rows2?: HTMLCollection; // ref to array of <tr> DOM nodes in grid2
   // pixelEdge: number; // length of an edge of a pixel cell
+  // topLeftX: number; // x-coord of top left of grid
+  // topLeftY: number; // y-coord of tope left of grid
 
   //// CONSTRUCTION
 
@@ -91,8 +94,8 @@ class Grid {
     }
 
     this.containerID = containerID;
-    this.width = config.width;
-    this.height = config.height;
+    this.pixelWidth = config.width;
+    this.pixelHeight = config.height;
     this.sizeImagesByCanvas = config.sizeImagesByCanvas ?? false;
     this.enforceBoundaries = config.enforceBoundaries ?? true;
     this.alertOnError = config.alertOnError ?? true;
@@ -103,6 +106,7 @@ class Grid {
     if (this.container == null) {
       this._error(`cannot find container element with ID "${this.containerID}"`);
     }
+    // TBD: I should be prepending these elements so user divs are visible
     this.container.classList.add("playgrid_wrapper");
     this.grid1 = this._createGridElement();
     this.table1 = this.grid1.firstElementChild;
@@ -113,28 +117,28 @@ class Grid {
     this.rows2 = this.table2.children[0].children;
     this.grid2.classList.add("playgrid_hide");
     this.container.append(this.grid2);
-    this._setGridAspectRatio();
-    window.addEventListener("resize", () => this._setGridAspectRatio());
+    this._resizeGrid();
+    window.addEventListener("resize", () => this._resizeGrid());
   }
 
   //// PUBLIC METHODS
 
   clear() {
     const rows = this.useGrid1 ? this.rows1 : this.rows2;
-    for (let r = 0; r < this.height; ++r) {
+    for (let r = 0; r < this.pixelHeight; ++r) {
       const targetCells = rows[r].children;
-      for (let c = 0; c < this.width; ++c) {
+      for (let c = 0; c < this.pixelWidth; ++c) {
         targetCells[c].className = "";
       }
     }
   }
 
-  image(x, y, sizePercent, /*verticalShift,*/ url) {
+  centerImage(x, y, sizePercent, url /*, verticalShiftPercent*/) {
     this._validatePoint(x, y);
     if (isNaN(sizePercent) || sizePercent <= 0) {
       this._error("image sizePercent must a number be > 0");
     }
-    if (!this.sizeImagesByCanvas && sizePercent > 100) {
+    if (this.sizeImagesByCanvas && sizePercent > 100) {
       this._error("image sizePercent must be <= 100");
     }
     // if (isNaN(verticalShift)) {
@@ -144,18 +148,24 @@ class Grid {
       this._error("image requires a non-empty url");
     }
 
-    let width = Math.round(this.sizeImagesByCanvas
-      ? this.width * sizePercent/100
-      : this.pixelEdge * sizePercent/100);
-    // let centerX = (x - 1) * this.pixelEdge + this.pixelEdge/2;
-    // let centerY = (y - 1) * this.pixelEdge + this.pixelEdge/2;
+    const grid = this;
+    const imageElement = this._createElementFromHTML(`<img src="${url}" />`);
+    this.container.append(imageElement);
 
-    // const element = this._createElementFromHTML(`<img src="${url}" `+
-    //     `style="width:${width}px" />`);
-    const element = this._createElementFromHTML(`<img src="${url}"  />`);
-    const rows = this.useGrid1 ? this.rows1 : this.rows2;
-    const cell = rows[Math.floor(y)].children[Math.floor(x)];
-    cell.append(element);
+    const image = new Image();
+    image.src = url;
+    image.onload = function() { // must be a "function"
+      const config = {
+        width: this.width,
+        height: this.height,
+        x: x,
+        y: y,
+        sizePercent: sizePercent,
+        element: imageElement
+      };
+      grid.images.push(config);
+      grid._positionImage(config);
+    };
   }
   
   plot(x, y, color) {
@@ -199,9 +209,9 @@ class Grid {
     // Class playgrid_canvas allows app to modify style without
     // being dependent on the table implmentation.
     let html = "<div class='playgrid_gridframe'><table class='playgrid_canvas'>\n";
-    for (let r = 0; r < this.height; ++r) {
+    for (let r = 0; r < this.pixelHeight; ++r) {
       html += "<tr>";
-      for (let c = 0; c < this.width; ++c) {
+      for (let c = 0; c < this.pixelWidth; ++c) {
         html += "<td></td>";
       }
       html += "</tr>\n";
@@ -210,24 +220,64 @@ class Grid {
     return this._createElementFromHTML(html);
   }
 
-  _setGridAspectRatio() {
-    const rect = this.container.getBoundingClientRect();
-    this._setAspectRatio(this.table1, rect);
-    this._setAspectRatio(this.table2, rect);
+  _positionImage(config) {
+
+    // Determine rendered width and height of image.
+
+    const maxEdge = Math.round(this.sizeImagesByCanvas
+      ? this.width * this.pixelEdge * config.sizePercent/100
+      : this.pixelEdge * config.sizePercent/100);
+    let width = Math.min(maxEdge, config.width);
+    let height = config.height * width / config.width;
+    if (height > maxEdge) {
+      height = maxEdge;
+      width = config.width * height / config.height;
+    }
+
+    const centerX = this.topLeftX + (config.x + 0.5) * this.pixelEdge;
+    const centerY = /*this.topLeftY +*/ (config.y + 0.5) * this.pixelEdge;
+    console.log(`center at ${centerX}, ${centerY}`);
+
+    const style = config.element.style;
+    style.width = Math.round(width) + "px";
+    style.height = Math.round(height) + "px";
+    style.left = Math.round(centerX - width / 2) + "px";
+    style.top = Math.round(centerY - height / 2) + "px";
   }
-  
-  _setAspectRatio(child, rect) {
+
+  _resizeGrid() {
+
+    // Compute new grid dimensions in screen pixels.
+
+    const wrapperRect = this.container.getBoundingClientRect();
     // CSS solutions were too hard to make behave as expected
-    const aspectRatio = this.width / this.height;
-    let adjustedWidth = rect.right - rect.left;
+    const aspectRatio = this.pixelWidth / this.pixelHeight;
+    let adjustedWidth = wrapperRect.right - wrapperRect.left;
     let adjustedHeight = adjustedWidth / aspectRatio;
-    if (adjustedHeight > rect.bottom - rect.top) {
-      adjustedHeight = rect.bottom - rect.top;
+    if (adjustedHeight > wrapperRect.bottom - wrapperRect.top) {
+      adjustedHeight = wrapperRect.bottom - wrapperRect.top;
       adjustedWidth = adjustedHeight * aspectRatio;
     }
-    child.style.width = adjustedWidth + "px";
-    child.style.height = adjustedHeight + "px";
-    this.pixelEdge = adjustedWidth / this.width;
+    this.pixelEdge = adjustedWidth / this.pixelWidth;
+
+    // Size the canvases to the new dimensions.
+
+    const widthPx = adjustedWidth + "px";
+    const heightPx = adjustedHeight + "px";
+    this.table1.style.width = widthPx;
+    this.table1.style.height = heightPx;
+    this.table2.style.width = widthPx;
+    this.table2.style.height = heightPx;
+
+    // Reposition the images.
+    
+    const gridRect = this.table1.getBoundingClientRect();
+    this.topLeftX = gridRect.left - wrapperRect.left;
+    this.topLeftY = gridRect.top - wrapperRect.top;
+    console.log(`topLeft ${this.topLeftX}, ${this.topLeftY}`);
+    for (let i = 0; i < this.images.length; ++i) {
+      this._positionImage(this.images[i]);
+    }
   }
   
   _validateColor(color) {
@@ -241,7 +291,7 @@ class Grid {
       this._error("x and y must be numbers");
     }
     const outsideBoundaries = 
-        (x < 0 || x >= this.width || y < 0 || y >= this.height);
+        (x < 0 || x >= this.pixelWidth || y < 0 || y >= this.pixelHeight);
     if (this.enforceBoundaries && outsideBoundaries) {
       this._error(`location (${x}, ${y}) is not on the grid`);
     }
