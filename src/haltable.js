@@ -22,6 +22,9 @@ class Haltable {
   //// PUBLIC METHODS
 
   async delay(milliseconds) {
+    if (milliseconds === undefined) {
+      milliseconds = 500;
+    }
     if (isNaN(milliseconds) || milliseconds < 0) {
       this._error("milliseconds must be a number >= 0");
     }

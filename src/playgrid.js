@@ -1,7 +1,7 @@
 
 const _clickToPlay = "Click to PLAY";
 const _clickToStop = "Click to STOP";
-const _playGridStyles = `
+const _playgridPlayGridStyles = `
   .playgrid_message {
     position: absolute;
     z-index: 10;
@@ -28,7 +28,7 @@ class PlayGrid extends Grid {
     this.runnable = runnable;
     this.haltable._validateRunnable(runnable);
 
-    this._addStyles(_playGridStyles);
+    this._addStyles(_playgridPlayGridStyles);
     this.hoverMessage = this._createElementFromHTML(
       `<div class="playgrid_message playgrid_hide">${_clickToPlay}</div>`);
     this.container.append(this.hoverMessage);
@@ -46,9 +46,6 @@ class PlayGrid extends Grid {
   }
 
   async delay(milliseconds) {
-    if (milliseconds === undefined) {
-      milliseconds = 500;
-    }
     await this.haltable.delay(milliseconds);
   }
 

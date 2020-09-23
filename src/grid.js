@@ -1,5 +1,5 @@
 
-const _gridStyles = `
+const _playgridGridStyles = `
   .playgrid_wrapper {
     position: relative;
   }
@@ -97,7 +97,7 @@ class Grid {
     this.enforceBoundaries = config.enforceBoundaries ?? true;
     this.alertOnError = config.alertOnError ?? true;
 
-    this._addStyles(_gridStyles);
+    this._addStyles(_playgridGridStyles);
 
     this.container = document.getElementById(this.containerID);
     if (this.container == null) {
