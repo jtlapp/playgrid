@@ -236,7 +236,6 @@ class Grid {
 
     const centerX = this.topLeftX + (config.x + 0.5) * this.pixelEdge;
     const centerY = /*this.topLeftY +*/ (config.y + 0.5) * this.pixelEdge;
-    console.log(`center at ${centerX}, ${centerY}`);
 
     const style = config.element.style;
     style.width = Math.round(width) + "px";
@@ -274,7 +273,6 @@ class Grid {
     const gridRect = this.table1.getBoundingClientRect();
     this.topLeftX = gridRect.left - wrapperRect.left;
     this.topLeftY = gridRect.top - wrapperRect.top;
-    console.log(`topLeft ${this.topLeftX}, ${this.topLeftY}`);
     for (let i = 0; i < this.images.length; ++i) {
       this._positionImage(this.images[i]);
     }
