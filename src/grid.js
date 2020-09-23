@@ -24,6 +24,10 @@ const _gridStyles = `
   .playgrid_hide {
     display: none;
   }
+
+  .playgrid_frame img {
+
+  }
 `;
 
 class Grid {
@@ -33,6 +37,7 @@ class Grid {
   // containerID: string;
   // width: number;
   // height: number;
+  // sizeImagesByCanvas: boolean;
   // enforceBoundaries: boolean;
   // alertOnError: boolean;
 
@@ -49,6 +54,7 @@ class Grid {
   // table2?: HTMLElement; // ref to <table> DOM node in grid2
   // rows1?: HTMLCollection; // ref to array of <tr> DOM nodes in grid1
   // rows2?: HTMLCollection; // ref to array of <tr> DOM nodes in grid2
+  // pixelEdge: number; // length of an edge of a pixel cell
 
   //// CONSTRUCTION
 
@@ -74,6 +80,9 @@ class Grid {
     if (config.width < 1 || config.height < 1) {
       this._error("width and height must be >= 1");
     }
+    if (["undefined", "boolean"].indexOf(typeof config.sizeImagesByCanvas) == -1) {
+      this._error("sizeImagesByCanvas must be a boolean");
+    }
     if (["undefined", "boolean"].indexOf(typeof config.enforceBoundaries) == -1) {
       this._error("enforceBoundaries must be a boolean");
     }
@@ -84,6 +93,7 @@ class Grid {
     this.containerID = containerID;
     this.width = config.width;
     this.height = config.height;
+    this.sizeImagesByCanvas = config.sizeImagesByCanvas ?? false;
     this.enforceBoundaries = config.enforceBoundaries ?? true;
     this.alertOnError = config.alertOnError ?? true;
 
@@ -117,6 +127,35 @@ class Grid {
         targetCells[c].className = "";
       }
     }
+  }
+
+  image(x, y, sizePercent, /*verticalShift,*/ url) {
+    this._validatePoint(x, y);
+    if (isNaN(sizePercent) || sizePercent <= 0) {
+      this._error("image sizePercent must a number be > 0");
+    }
+    if (!this.sizeImagesByCanvas && sizePercent > 100) {
+      this._error("image sizePercent must be <= 100");
+    }
+    // if (isNaN(verticalShift)) {
+    //   this._error("image verticalShift must a number");
+    // }
+    if (typeof url != "string" || url == "") {
+      this._error("image requires a non-empty url");
+    }
+
+    let width = Math.round(this.sizeImagesByCanvas
+      ? this.width * sizePercent/100
+      : this.pixelEdge * sizePercent/100);
+    // let centerX = (x - 1) * this.pixelEdge + this.pixelEdge/2;
+    // let centerY = (y - 1) * this.pixelEdge + this.pixelEdge/2;
+
+    // const element = this._createElementFromHTML(`<img src="${url}" `+
+    //     `style="width:${width}px" />`);
+    const element = this._createElementFromHTML(`<img src="${url}"  />`);
+    const rows = this.useGrid1 ? this.rows1 : this.rows2;
+    const cell = rows[Math.floor(y)].children[Math.floor(x)];
+    cell.append(element);
   }
   
   plot(x, y, color) {
@@ -188,6 +227,7 @@ class Grid {
     }
     child.style.width = adjustedWidth + "px";
     child.style.height = adjustedHeight + "px";
+    this.pixelEdge = adjustedWidth / this.width;
   }
   
   _validateColor(color) {

@@ -45,13 +45,21 @@ class PlayGrid extends Grid {
     this.container.addEventListener("click", () => this._onClick());
   }
 
+  async delay(milliseconds) {
+    if (milliseconds === undefined) {
+      milliseconds = 500;
+    }
+    await this.haltable.delay(milliseconds);
+  }
+
   async _onClick() {
     if (this.haltable.running) {
-      this.hoverMessage.textContent = _clickToPlay;
       this.haltable.stop();
+      this.hoverMessage.textContent = _clickToPlay;
     } else {
       this.hoverMessage.textContent = _clickToStop;
       await this.haltable.loop(this.runnable, this);
+      this.hoverMessage.textContent = _clickToPlay;
     }
   }
 

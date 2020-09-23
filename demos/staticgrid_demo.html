@@ -13,7 +13,6 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      height: 100vh;
     }
     .frame {
       padding: 20px;
@@ -21,10 +20,14 @@
       height: calc(100% - 40px);
     }
     #my_grid {
-      height: 100%;
+      height: 400px;
     }
     #my_grid .playgrid_canvas {
       background-color: black;
+    }
+    #my_grid .playgrid_canvas td {
+      border: 1px solid red;
+      text-align: center;
     }
     .green {
       background-color: green;
@@ -37,24 +40,24 @@
     }
   </style>
   <script>
-    async function animation(grid) {
+    window.addEventListener("load", board);
+
+    function board() {
+      var grid = new Grid("my_grid", { width: 8, height: 8 });
       grid.plot(1, 1, "red");
       grid.plot(2, 2, "blue");
-    }
-
-    window.addEventListener("load", game);
-
-    function game() {
-      var grid = new PlayGrid("my_grid", {
-          width: 10,
-          height: 10
-        }, animation);
+      grid.image(5, 5, 100, "./images/animals/shark.png");
     }
   </script>
 </head>
 <body>
+  <h1>My Game Board</h1>
   <div class="frame">
     <div id="my_grid"></div>
   </div>
+  <ul>
+    <li>Game rule 1.</li>
+    <li>Game rule 2.</li>
+  </ul>
 </body>
 </html>
